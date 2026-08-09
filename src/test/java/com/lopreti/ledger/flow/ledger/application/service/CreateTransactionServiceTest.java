@@ -1,6 +1,9 @@
 package com.lopreti.ledger.flow.ledger.application.service;
 
+import com.lopreti.ledger.flow.account.application.port.out.AccountRepository;
+import com.lopreti.ledger.flow.account.domain.Account;
 import com.lopreti.ledger.flow.account.domain.AccountId;
+import com.lopreti.ledger.flow.account.domain.CustomerId;
 import com.lopreti.ledger.flow.ledger.application.port.out.TransactionRepository;
 import com.lopreti.ledger.flow.ledger.domain.PostingType;
 import com.lopreti.ledger.flow.ledger.domain.Transaction;
@@ -18,17 +21,27 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class CreateTransactionServiceTest {
 
     @Mock
     private TransactionRepository transactionRepository;
+
+    @Mock
+    private AccountRepository accountRepository;
 
     private Clock clock;
 
@@ -48,6 +61,7 @@ class CreateTransactionServiceTest {
 
         service = new CreateTransactionService(
                 transactionRepository,
+                accountRepository,
                 clock
         );
 
@@ -56,12 +70,13 @@ class CreateTransactionServiceTest {
 
     @Test
     void shouldCreateBalancedTransaction() {
-        var debitAccountId = AccountId.of(
-                UUID.randomUUID()
-        );
 
-        var creditAccountId = AccountId.of(
-                UUID.randomUUID()
+        var debitAccount = createAccount("100.00");
+        var creditAccount = createAccount("0.00");
+
+        mockAccounts(
+                debitAccount,
+                creditAccount
         );
 
         var debitMoney = Money.of(
@@ -74,12 +89,12 @@ class CreateTransactionServiceTest {
                 brl
         );
 
-        var debitBaseMoney = Money.of(
+        var debitFunctionalMoney = Money.of(
                 new BigDecimal("100.00"),
                 brl
         );
 
-        var creditBaseMoney = Money.of(
+        var creditFunctionalMoney = Money.of(
                 new BigDecimal("100.00"),
                 brl
         );
@@ -89,12 +104,12 @@ class CreateTransactionServiceTest {
                         invocation.getArgument(0));
 
         var result = service.execute(
-                debitAccountId,
+                debitAccount.id(),
                 debitMoney,
-                debitBaseMoney,
-                creditAccountId,
+                debitFunctionalMoney,
+                creditAccount.id(),
                 creditMoney,
-                creditBaseMoney
+                creditFunctionalMoney
         );
 
         assertNotNull(result);
@@ -121,18 +136,29 @@ class CreateTransactionServiceTest {
                 result.postings().size()
         );
 
+        assertEquals(
+                new BigDecimal("0.0000"),
+                debitAccount.balance().amount()
+        );
+
+        assertEquals(
+                new BigDecimal("100.0000"),
+                creditAccount.balance().amount()
+        );
+
         verify(transactionRepository)
                 .save(result);
     }
 
     @Test
     void shouldCreateDebitAndCreditPostings() {
-        var debitAccountId = AccountId.of(
-                UUID.randomUUID()
-        );
 
-        var creditAccountId = AccountId.of(
-                UUID.randomUUID()
+        var debitAccount = createAccount("100.00");
+        var creditAccount = createAccount("0.00");
+
+        mockAccounts(
+                debitAccount,
+                creditAccount
         );
 
         var debitMoney = Money.of(
@@ -145,12 +171,12 @@ class CreateTransactionServiceTest {
                 brl
         );
 
-        var debitBaseMoney = Money.of(
+        var debitFunctionalMoney = Money.of(
                 new BigDecimal("100.00"),
                 brl
         );
 
-        var creditBaseMoney = Money.of(
+        var creditFunctionalMoney = Money.of(
                 new BigDecimal("100.00"),
                 brl
         );
@@ -160,12 +186,12 @@ class CreateTransactionServiceTest {
                         invocation.getArgument(0));
 
         var result = service.execute(
-                debitAccountId,
+                debitAccount.id(),
                 debitMoney,
-                debitBaseMoney,
-                creditAccountId,
+                debitFunctionalMoney,
+                creditAccount.id(),
                 creditMoney,
-                creditBaseMoney
+                creditFunctionalMoney
         );
 
         var debit = result.postings()
@@ -183,7 +209,7 @@ class CreateTransactionServiceTest {
                 .orElseThrow();
 
         assertEquals(
-                debitAccountId,
+                debitAccount.id(),
                 debit.accountId()
         );
 
@@ -193,12 +219,12 @@ class CreateTransactionServiceTest {
         );
 
         assertEquals(
-                debitBaseMoney,
-                debit.baseMoney()
+                debitFunctionalMoney,
+                debit.functionalMoney()
         );
 
         assertEquals(
-                creditAccountId,
+                creditAccount.id(),
                 credit.accountId()
         );
 
@@ -208,8 +234,8 @@ class CreateTransactionServiceTest {
         );
 
         assertEquals(
-                creditBaseMoney,
-                credit.baseMoney()
+                creditFunctionalMoney,
+                credit.functionalMoney()
         );
 
         assertEquals(
@@ -225,15 +251,21 @@ class CreateTransactionServiceTest {
 
     @Test
     void shouldGenerateDifferentTransactionIds() {
-        var debitAccountId = AccountId.generate();
-        var creditAccountId = AccountId.generate();
+
+        var debitAccount = createAccount("200.00");
+        var creditAccount = createAccount("0.00");
+
+        mockAccounts(
+                debitAccount,
+                creditAccount
+        );
 
         var money = Money.of(
                 new BigDecimal("100.00"),
                 brl
         );
 
-        var baseMoney = Money.of(
+        var functionalMoney = Money.of(
                 new BigDecimal("100.00"),
                 brl
         );
@@ -243,21 +275,21 @@ class CreateTransactionServiceTest {
                         invocation.getArgument(0));
 
         var first = service.execute(
-                debitAccountId,
+                debitAccount.id(),
                 money,
-                baseMoney,
-                creditAccountId,
+                functionalMoney,
+                creditAccount.id(),
                 money,
-                baseMoney
+                functionalMoney
         );
 
         var second = service.execute(
-                debitAccountId,
+                debitAccount.id(),
                 money,
-                baseMoney,
-                creditAccountId,
+                functionalMoney,
+                creditAccount.id(),
                 money,
-                baseMoney
+                functionalMoney
         );
 
         assertNotEquals(
@@ -265,14 +297,32 @@ class CreateTransactionServiceTest {
                 second.id()
         );
 
-        verify(transactionRepository, times(2))
-                .save(any(Transaction.class));
+        assertEquals(
+                new BigDecimal("0.0000"),
+                debitAccount.balance().amount()
+        );
+
+        assertEquals(
+                new BigDecimal("200.0000"),
+                creditAccount.balance().amount()
+        );
+
+        verify(
+                transactionRepository,
+                times(2)
+        ).save(any(Transaction.class));
     }
 
     @Test
     void shouldNotSaveUnbalancedTransaction() {
-        var debitAccountId = AccountId.generate();
-        var creditAccountId = AccountId.generate();
+
+        var debitAccount = createAccount("100.00");
+        var creditAccount = createAccount("0.00");
+
+        mockAccounts(
+                debitAccount,
+                creditAccount
+        );
 
         var debitMoney = Money.of(
                 new BigDecimal("100.00"),
@@ -284,12 +334,12 @@ class CreateTransactionServiceTest {
                 brl
         );
 
-        var debitBaseMoney = Money.of(
+        var debitFunctionalMoney = Money.of(
                 new BigDecimal("100.00"),
                 brl
         );
 
-        var creditBaseMoney = Money.of(
+        var creditFunctionalMoney = Money.of(
                 new BigDecimal("90.00"),
                 brl
         );
@@ -297,12 +347,12 @@ class CreateTransactionServiceTest {
         assertThrows(
                 IllegalStateException.class,
                 () -> service.execute(
-                        debitAccountId,
+                        debitAccount.id(),
                         debitMoney,
-                        debitBaseMoney,
-                        creditAccountId,
+                        debitFunctionalMoney,
+                        creditAccount.id(),
                         creditMoney,
-                        creditBaseMoney
+                        creditFunctionalMoney
                 )
         );
 
@@ -314,8 +364,14 @@ class CreateTransactionServiceTest {
 
     @Test
     void shouldSaveCreatedTransaction() {
-        var debitAccountId = AccountId.generate();
-        var creditAccountId = AccountId.generate();
+
+        var debitAccount = createAccount("100.00");
+        var creditAccount = createAccount("0.00");
+
+        mockAccounts(
+                debitAccount,
+                creditAccount
+        );
 
         var money = Money.of(
                 new BigDecimal("100.00"),
@@ -327,10 +383,10 @@ class CreateTransactionServiceTest {
                         invocation.getArgument(0));
 
         service.execute(
-                debitAccountId,
+                debitAccount.id(),
                 money,
                 money,
-                creditAccountId,
+                creditAccount.id(),
                 money,
                 money
         );
@@ -354,5 +410,40 @@ class CreateTransactionServiceTest {
                 2,
                 savedTransaction.postings().size()
         );
+    }
+
+    private Account createAccount(
+            String initialBalance
+    ) {
+        var account = Account.create(
+                AccountId.generate(),
+                CustomerId.of(UUID.randomUUID()),
+                brl,
+                fixedInstant
+        );
+
+        if (new BigDecimal(initialBalance)
+                .compareTo(BigDecimal.ZERO) > 0) {
+
+            account.credit(
+                    Money.of(
+                            new BigDecimal(initialBalance),
+                            brl
+                    )
+            );
+        }
+
+        return account;
+    }
+
+    private void mockAccounts(
+            Account debitAccount,
+            Account creditAccount
+    ) {
+        when(accountRepository.findById(debitAccount.id()))
+                .thenReturn(Optional.of(debitAccount));
+
+        when(accountRepository.findById(creditAccount.id()))
+                .thenReturn(Optional.of(creditAccount));
     }
 }

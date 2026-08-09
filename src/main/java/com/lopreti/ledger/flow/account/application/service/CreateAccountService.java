@@ -15,7 +15,8 @@ import java.util.Objects;
 
 @Service
 @Transactional
-public class CreateAccountService implements CreateAccountUseCase {
+public class CreateAccountService
+        implements CreateAccountUseCase {
 
     private final AccountRepository accountRepository;
     private final Clock clock;
@@ -24,8 +25,11 @@ public class CreateAccountService implements CreateAccountUseCase {
             AccountRepository accountRepository,
             Clock clock
     ) {
-        this.accountRepository = Objects.requireNonNull(accountRepository);
-        this.clock = Objects.requireNonNull(clock);
+        this.accountRepository =
+                Objects.requireNonNull(accountRepository);
+
+        this.clock =
+                Objects.requireNonNull(clock);
     }
 
     @Override
@@ -33,14 +37,17 @@ public class CreateAccountService implements CreateAccountUseCase {
             CustomerId customerId,
             Currency currency
     ) {
-        AccountId accountId = AccountId.generate();
 
-        Account account = Account.create(
-                accountId,
-                customerId,
-                currency,
-                Instant.now(clock)
-        );
+        AccountId accountId =
+                AccountId.generate();
+
+        Account account =
+                Account.create(
+                        accountId,
+                        customerId,
+                        currency,
+                        Instant.now(clock)
+                );
 
         return accountRepository.save(account);
     }

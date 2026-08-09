@@ -184,7 +184,7 @@ class TransactionTest {
     }
 
     @Test
-    void shouldRejectUnbalancedBaseMoney() {
+    void shouldRejectUnbalancedFunctionalMoney() {
         var brl = Currency.of("BRL");
         var usd = Currency.of("USD");
 

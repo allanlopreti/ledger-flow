@@ -47,10 +47,10 @@ public class TransactionRepositoryAdapter
                                             .code(),
                                     posting.money()
                                             .amount(),
-                                    posting.baseMoney()
+                                    posting.functionalMoney()
                                             .currency()
                                             .code(),
-                                    posting.baseMoney()
+                                    posting.functionalMoney()
                                             .amount(),
                                     posting.createdAt()
                             );
@@ -105,7 +105,7 @@ public class TransactionRepositoryAdapter
                 Currency.of(entity.getCurrency())
         );
 
-        Money baseMoney = Money.of(
+        Money functionalMoney = Money.of(
                 entity.getBaseAmount(),
                 Currency.of(entity.getBaseCurrency())
         );
@@ -117,7 +117,7 @@ public class TransactionRepositoryAdapter
                 AccountId.of(entity.getAccountId()),
                 entity.getType(),
                 money,
-                baseMoney,
+                functionalMoney,
                 entity.getCreatedAt()
         );
     }

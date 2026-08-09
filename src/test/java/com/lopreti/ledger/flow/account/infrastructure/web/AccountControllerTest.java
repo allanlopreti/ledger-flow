@@ -1,7 +1,9 @@
 package com.lopreti.ledger.flow.account.infrastructure.web;
 
 import com.lopreti.ledger.flow.account.application.port.in.CreateAccountUseCase;
+import com.lopreti.ledger.flow.account.application.port.in.GetAccountBalanceUseCase;
 import com.lopreti.ledger.flow.account.domain.Account;
+import com.lopreti.ledger.flow.account.domain.AccountBalance;
 import com.lopreti.ledger.flow.account.domain.AccountId;
 import com.lopreti.ledger.flow.account.domain.CustomerId;
 import com.lopreti.ledger.flow.shared.domain.Currency;
@@ -12,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -19,6 +22,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -32,6 +36,9 @@ class AccountControllerTest {
 
     @MockitoBean
     private CreateAccountUseCase createAccountUseCase;
+
+    @MockitoBean
+    private GetAccountBalanceUseCase getAccountBalanceUseCase;
 
     @Test
     void shouldCreateAccount() throws Exception {
@@ -86,6 +93,31 @@ class AccountControllerTest {
                         any(CustomerId.class),
                         any(Currency.class)
                 );
+    }
+
+    @Test
+    void shouldGetAccountBalance() throws Exception {
+        UUID accountId = UUID.randomUUID();
+
+        AccountBalance balance =
+                new AccountBalance(
+                        new BigDecimal("150.0000"),
+                        Currency.of("BRL")
+                );
+
+        when(getAccountBalanceUseCase.execute(
+                AccountId.of(accountId)
+        )).thenReturn(balance);
+
+        mockMvc.perform(
+                        get("/accounts/{accountId}/balance", accountId)
+                )
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.balance").value(150.0))
+                .andExpect(jsonPath("$.currency").value("BRL"));
+
+        verify(getAccountBalanceUseCase)
+                .execute(AccountId.of(accountId));
     }
 
     @Test

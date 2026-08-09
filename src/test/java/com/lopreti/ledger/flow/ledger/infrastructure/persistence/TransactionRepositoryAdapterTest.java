@@ -88,12 +88,12 @@ class TransactionRepositoryAdapterTest {
                 brl
         );
 
-        var debitBaseMoney = Money.of(
+        var debitFunctionalMoney = Money.of(
                 new BigDecimal("100.00"),
                 brl
         );
 
-        var creditBaseMoney = Money.of(
+        var creditFunctionalMoney = Money.of(
                 new BigDecimal("100.00"),
                 brl
         );
@@ -112,7 +112,7 @@ class TransactionRepositoryAdapterTest {
                         debitPostingId,
                         debitAccountId,
                         debitMoney,
-                        debitBaseMoney,
+                        debitFunctionalMoney,
                         now
                 )
         );
@@ -122,7 +122,7 @@ class TransactionRepositoryAdapterTest {
                         creditPostingId,
                         creditAccountId,
                         creditMoney,
-                        creditBaseMoney,
+                        creditFunctionalMoney,
                         now
                 )
         );
@@ -182,8 +182,8 @@ class TransactionRepositoryAdapterTest {
         );
 
         assertMoneyEquals(
-                debitBaseMoney,
-                debit.baseMoney()
+                debitFunctionalMoney,
+                debit.functionalMoney()
         );
 
         var credit = persisted.postings()
@@ -209,8 +209,8 @@ class TransactionRepositoryAdapterTest {
         );
 
         assertMoneyEquals(
-                creditBaseMoney,
-                credit.baseMoney()
+                creditFunctionalMoney,
+                credit.functionalMoney()
         );
     }
 
@@ -310,6 +310,7 @@ class TransactionRepositoryAdapterTest {
                         UUID.randomUUID(),
                         "BRL",
                         AccountStatus.ACTIVE,
+                        BigDecimal.ZERO,
                         Instant.now()
                 )
         );

@@ -12,7 +12,7 @@ public final class Posting {
     private final AccountId accountId;
     private final PostingType type;
     private final Money money;
-    private final Money baseMoney;
+    private final Money functionalMoney;
     private final Instant createdAt;
 
     private Posting(
@@ -20,7 +20,7 @@ public final class Posting {
             AccountId accountId,
             PostingType type,
             Money money,
-            Money baseMoney,
+            Money functionalMoney,
             Instant createdAt
     ) {
         this.id = Objects.requireNonNull(
@@ -43,8 +43,8 @@ public final class Posting {
                 "Money cannot be null"
         );
 
-        this.baseMoney = Objects.requireNonNull(
-                baseMoney,
+        this.functionalMoney = Objects.requireNonNull(
+                functionalMoney,
                 "Base money cannot be null"
         );
 
@@ -59,7 +59,7 @@ public final class Posting {
             );
         }
 
-        if (!baseMoney.isPositive()) {
+        if (!functionalMoney.isPositive()) {
             throw new IllegalArgumentException(
                     "Base money amount must be positive"
             );
@@ -70,7 +70,7 @@ public final class Posting {
             PostingId id,
             AccountId accountId,
             Money money,
-            Money baseMoney,
+            Money functionalMoney,
             Instant createdAt
     ) {
         return new Posting(
@@ -78,7 +78,7 @@ public final class Posting {
                 accountId,
                 PostingType.DEBIT,
                 money,
-                baseMoney,
+                functionalMoney,
                 createdAt
         );
     }
@@ -87,7 +87,7 @@ public final class Posting {
             PostingId id,
             AccountId accountId,
             Money money,
-            Money baseMoney,
+            Money functionalMoney,
             Instant createdAt
     ) {
         return new Posting(
@@ -95,7 +95,7 @@ public final class Posting {
                 accountId,
                 PostingType.CREDIT,
                 money,
-                baseMoney,
+                functionalMoney,
                 createdAt
         );
     }
@@ -105,7 +105,7 @@ public final class Posting {
             AccountId accountId,
             PostingType type,
             Money money,
-            Money baseMoney,
+            Money functionalMoney,
             Instant createdAt
     ) {
         return new Posting(
@@ -113,7 +113,7 @@ public final class Posting {
                 accountId,
                 type,
                 money,
-                baseMoney,
+                functionalMoney,
                 createdAt
         );
     }
@@ -134,8 +134,8 @@ public final class Posting {
         return money;
     }
 
-    public Money baseMoney() {
-        return baseMoney;
+    public Money functionalMoney() {
+        return functionalMoney;
     }
 
     public Instant createdAt() {

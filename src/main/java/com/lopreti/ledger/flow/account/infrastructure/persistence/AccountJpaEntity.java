@@ -3,6 +3,7 @@ package com.lopreti.ledger.flow.account.infrastructure.persistence;
 import com.lopreti.ledger.flow.account.domain.AccountStatus;
 import jakarta.persistence.*;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -23,6 +24,9 @@ public class AccountJpaEntity {
     @Column(name = "status", nullable = false)
     private AccountStatus status;
 
+    @Column(name = "balance", nullable = false, precision = 19, scale = 4)
+    private BigDecimal balance;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -34,12 +38,14 @@ public class AccountJpaEntity {
             UUID customerId,
             String currency,
             AccountStatus status,
+            BigDecimal balance,
             Instant createdAt
     ) {
         this.id = id;
         this.customerId = customerId;
         this.currency = currency;
         this.status = status;
+        this.balance = balance;
         this.createdAt = createdAt;
     }
 
@@ -57,6 +63,10 @@ public class AccountJpaEntity {
 
     public AccountStatus getStatus() {
         return status;
+    }
+
+    public BigDecimal getBalance() {
+        return balance;
     }
 
     public Instant getCreatedAt() {

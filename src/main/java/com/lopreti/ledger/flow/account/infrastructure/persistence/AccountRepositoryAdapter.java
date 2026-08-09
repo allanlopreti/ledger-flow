@@ -2,6 +2,7 @@ package com.lopreti.ledger.flow.account.infrastructure.persistence;
 
 import com.lopreti.ledger.flow.account.application.port.out.AccountRepository;
 import com.lopreti.ledger.flow.account.domain.Account;
+import com.lopreti.ledger.flow.account.domain.AccountBalance;
 import com.lopreti.ledger.flow.account.domain.AccountId;
 import com.lopreti.ledger.flow.account.domain.CustomerId;
 import com.lopreti.ledger.flow.shared.domain.Currency;
@@ -10,7 +11,8 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public class AccountRepositoryAdapter implements AccountRepository {
+public class AccountRepositoryAdapter
+        implements AccountRepository {
 
     private final SpringDataAccountRepository repository;
 
@@ -23,13 +25,15 @@ public class AccountRepositoryAdapter implements AccountRepository {
     @Override
     public Account save(Account account) {
 
-        AccountJpaEntity entity = new AccountJpaEntity(
-                account.id().value(),
-                account.customerId().value(),
-                account.currency().code(),
-                account.status(),
-                account.createdAt()
-        );
+        AccountJpaEntity entity =
+                new AccountJpaEntity(
+                        account.id().value(),
+                        account.customerId().value(),
+                        account.currency().code(),
+                        account.status(),
+                        account.balance().amount(),
+                        account.createdAt()
+                );
 
         repository.save(entity);
 
@@ -38,23 +42,37 @@ public class AccountRepositoryAdapter implements AccountRepository {
 
     @Override
     public Optional<Account> findById(AccountId id) {
+
         return repository.findById(id.value())
                 .map(this::toDomain);
     }
 
     @Override
     public boolean existsById(AccountId id) {
+
         return repository.existsById(id.value());
     }
 
-    private Account toDomain(AccountJpaEntity entity) {
+    private Account toDomain(
+            AccountJpaEntity entity
+    ) {
+
+        var currency =
+                Currency.of(entity.getCurrency());
+
+        var balance =
+                new AccountBalance(
+                        entity.getBalance(),
+                        currency
+                );
 
         return Account.reconstitute(
                 AccountId.of(entity.getId()),
                 CustomerId.of(entity.getCustomerId()),
-                Currency.of(entity.getCurrency()),
+                currency,
                 entity.getStatus(),
-                entity.getCreatedAt()
+                entity.getCreatedAt(),
+                balance
         );
     }
 }

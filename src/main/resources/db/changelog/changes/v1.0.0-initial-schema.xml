@@ -27,6 +27,12 @@
                 <constraints nullable="false"/>
             </column>
             <column
+                    name="balance"
+                    type="NUMERIC(19,4)"
+                    defaultValueNumeric="0">
+                <constraints nullable="false"/>
+            </column>
+            <column
                     name="status"
                     type="VARCHAR(20)">
                 <constraints nullable="false"/>

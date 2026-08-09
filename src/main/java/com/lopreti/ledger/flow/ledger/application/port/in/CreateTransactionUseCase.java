@@ -9,9 +9,9 @@ public interface CreateTransactionUseCase {
     Transaction execute(
             AccountId debitAccountId,
             Money debitMoney,
-            Money debitBaseMoney,
+            Money debitFunctionalMoney,
             AccountId creditAccountId,
             Money creditMoney,
-            Money creditBaseMoney
+            Money creditFunctionalMoney
     );
 }

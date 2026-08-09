@@ -26,7 +26,7 @@ class PostingTest {
                 BRL
         );
 
-        Money baseMoney = Money.of(
+        Money functionalMoney = Money.of(
                 new BigDecimal("100.00"),
                 BRL
         );
@@ -35,7 +35,7 @@ class PostingTest {
                 PostingId.generate(),
                 ACCOUNT_ID,
                 money,
-                baseMoney,
+                functionalMoney,
                 Instant.now()
         );
 
@@ -50,8 +50,8 @@ class PostingTest {
         );
 
         assertEquals(
-                baseMoney,
-                posting.baseMoney()
+                functionalMoney,
+                posting.functionalMoney()
         );
 
         assertEquals(
@@ -68,7 +68,7 @@ class PostingTest {
                 BRL
         );
 
-        Money baseMoney = Money.of(
+        Money functionalMoney = Money.of(
                 new BigDecimal("100.00"),
                 BRL
         );
@@ -77,7 +77,7 @@ class PostingTest {
                 PostingId.generate(),
                 ACCOUNT_ID,
                 money,
-                baseMoney,
+                functionalMoney,
                 Instant.now()
         );
 
@@ -92,8 +92,8 @@ class PostingTest {
         );
 
         assertEquals(
-                baseMoney,
-                posting.baseMoney()
+                functionalMoney,
+                posting.functionalMoney()
         );
     }
 
@@ -102,7 +102,7 @@ class PostingTest {
 
         Money money = Money.zero(BRL);
 
-        Money baseMoney = Money.zero(BRL);
+        Money functionalMoney = Money.zero(BRL);
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -110,7 +110,7 @@ class PostingTest {
                         PostingId.generate(),
                         ACCOUNT_ID,
                         money,
-                        baseMoney,
+                        functionalMoney,
                         Instant.now()
                 )
         );
@@ -124,7 +124,7 @@ class PostingTest {
                 BRL
         );
 
-        Money baseMoney = Money.of(
+        Money functionalMoney = Money.of(
                 new BigDecimal("-100.00"),
                 BRL
         );
@@ -135,7 +135,7 @@ class PostingTest {
                         PostingId.generate(),
                         ACCOUNT_ID,
                         money,
-                        baseMoney,
+                        functionalMoney,
                         Instant.now()
                 )
         );

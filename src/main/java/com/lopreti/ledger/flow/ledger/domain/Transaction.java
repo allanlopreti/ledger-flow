@@ -101,7 +101,7 @@ public final class Transaction {
             );
         }
 
-        if (!posting.baseMoney()
+        if (!posting.functionalMoney()
                 .currency()
                 .equals(baseCurrency)) {
 
@@ -143,7 +143,7 @@ public final class Transaction {
                 .filter(posting ->
                         posting.type() == PostingType.DEBIT)
                 .map(posting ->
-                        posting.baseMoney().amount())
+                        posting.functionalMoney().amount())
                 .reduce(
                         BigDecimal.ZERO,
                         BigDecimal::add
@@ -153,7 +153,7 @@ public final class Transaction {
                 .filter(posting ->
                         posting.type() == PostingType.CREDIT)
                 .map(posting ->
-                        posting.baseMoney().amount())
+                        posting.functionalMoney().amount())
                 .reduce(
                         BigDecimal.ZERO,
                         BigDecimal::add

@@ -1,6 +1,7 @@
 package com.lopreti.ledger.flow.account.domain;
 
 import com.lopreti.ledger.flow.shared.domain.Currency;
+import com.lopreti.ledger.flow.shared.domain.Money;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -13,31 +14,36 @@ public final class Account {
     private final Instant createdAt;
 
     private AccountStatus status;
+    private AccountBalance balance;
 
     private Account(
             AccountId id,
             CustomerId customerId,
             Currency currency,
-            AccountStatus status,
             Instant createdAt
     ) {
-        this.id = Objects.requireNonNull(id, "Account ID cannot be null");
+        this.id = Objects.requireNonNull(
+                id,
+                "Account ID cannot be null"
+        );
+
         this.customerId = Objects.requireNonNull(
                 customerId,
                 "Customer ID cannot be null"
         );
+
         this.currency = Objects.requireNonNull(
                 currency,
                 "Currency cannot be null"
         );
-        this.status = Objects.requireNonNull(
-                status,
-                "Account status cannot be null"
-        );
+
         this.createdAt = Objects.requireNonNull(
                 createdAt,
                 "Created at cannot be null"
         );
+
+        this.status = AccountStatus.ACTIVE;
+        this.balance = AccountBalance.zero(currency);
     }
 
     public static Account create(
@@ -50,7 +56,6 @@ public final class Account {
                 id,
                 customerId,
                 currency,
-                AccountStatus.ACTIVE,
                 createdAt
         );
     }
@@ -60,25 +65,51 @@ public final class Account {
             CustomerId customerId,
             Currency currency,
             AccountStatus status,
-            Instant createdAt
+            Instant createdAt,
+            AccountBalance balance
     ) {
-        return new Account(
+        Account account = new Account(
                 id,
                 customerId,
                 currency,
-                status,
                 createdAt
         );
+
+        account.status = Objects.requireNonNull(
+                status,
+                "Account status cannot be null"
+        );
+
+        account.balance = Objects.requireNonNull(
+                balance,
+                "Account balance cannot be null"
+        );
+
+        return account;
     }
 
     public void block() {
-        if (status == AccountStatus.CLOSED) {
+        if (status != AccountStatus.ACTIVE) {
             throw new IllegalStateException(
-                    "Closed account cannot be blocked"
+                    "Only active accounts can be blocked"
             );
         }
 
         status = AccountStatus.BLOCKED;
+    }
+
+    public void activate() {
+        if (status == AccountStatus.ACTIVE) {
+            return;
+        }
+
+        if (status != AccountStatus.BLOCKED) {
+            throw new IllegalStateException(
+                    "Only blocked accounts can be activated"
+            );
+        }
+
+        status = AccountStatus.ACTIVE;
     }
 
     public void close() {
@@ -91,14 +122,58 @@ public final class Account {
         status = AccountStatus.CLOSED;
     }
 
-    public void activate() {
-        if (status == AccountStatus.CLOSED) {
-            throw new IllegalStateException(
-                    "Closed account cannot be activated"
+    public void debit(Money amount) {
+        Objects.requireNonNull(
+                amount,
+                "Amount cannot be null"
+        );
+
+        ensureActive();
+
+        if (!currency.equals(amount.currency())) {
+            throw new IllegalArgumentException(
+                    "Account currency must match debit currency"
             );
         }
 
-        status = AccountStatus.ACTIVE;
+        if (balance.amount().compareTo(amount.amount()) < 0) {
+            throw new IllegalStateException(
+                    "Insufficient account balance"
+            );
+        }
+
+        balance = new AccountBalance(
+                balance.amount().subtract(amount.amount()),
+                currency
+        );
+    }
+
+    public void credit(Money amount) {
+        Objects.requireNonNull(
+                amount,
+                "Amount cannot be null"
+        );
+
+        ensureActive();
+
+        if (!currency.equals(amount.currency())) {
+            throw new IllegalArgumentException(
+                    "Account currency must match credit currency"
+            );
+        }
+
+        balance = new AccountBalance(
+                balance.amount().add(amount.amount()),
+                currency
+        );
+    }
+
+    private void ensureActive() {
+        if (status != AccountStatus.ACTIVE) {
+            throw new IllegalStateException(
+                    "Account must be active"
+            );
+        }
     }
 
     public AccountId id() {
@@ -119,5 +194,9 @@ public final class Account {
 
     public Instant createdAt() {
         return createdAt;
+    }
+
+    public AccountBalance balance() {
+        return balance;
     }
 }
