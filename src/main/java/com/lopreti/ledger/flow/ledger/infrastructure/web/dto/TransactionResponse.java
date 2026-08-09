@@ -2,6 +2,7 @@ package com.lopreti.ledger.flow.ledger.infrastructure.web.dto;
 
 import com.lopreti.ledger.flow.ledger.domain.Posting;
 import com.lopreti.ledger.flow.ledger.domain.Transaction;
+import com.lopreti.ledger.flow.shared.domain.ExchangeRate;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -13,9 +14,9 @@ public record TransactionResponse(
         String baseCurrency,
         String status,
         Instant createdAt,
+        ExchangeRateResponse exchangeRate,
         List<PostingResponse> postings
 ) {
-
     public static TransactionResponse from(
             Transaction transaction
     ) {
@@ -24,6 +25,7 @@ public record TransactionResponse(
                 transaction.baseCurrency().code(),
                 transaction.status().name(),
                 transaction.createdAt(),
+                ExchangeRateResponse.from(transaction.exchangeRate()),
                 transaction.postings()
                         .stream()
                         .map(PostingResponse::from)

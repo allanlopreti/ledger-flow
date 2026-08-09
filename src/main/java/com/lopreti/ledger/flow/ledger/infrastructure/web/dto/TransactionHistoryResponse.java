@@ -16,6 +16,7 @@ public record TransactionHistoryResponse(
         BigDecimal creditAmount,
         String debitCurrency,
         String creditCurrency,
+        BigDecimal exchangeRate,
         Instant createdAt
 ) {
 
@@ -55,6 +56,9 @@ public record TransactionHistoryResponse(
                 credit.money().amount(),
                 debit.money().currency().code(),
                 credit.money().currency().code(),
+                transaction.exchangeRate() != null
+                        ? transaction.exchangeRate().rate()
+                        : null,
                 transaction.createdAt()
         );
     }
