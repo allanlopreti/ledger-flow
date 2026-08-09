@@ -6,10 +6,42 @@
             http://www.liquibase.org/xml/ns/dbchangelog
             https://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
 
-    <changeSet id="08082026203100" author="lopreti">
-        <sql>
-            SELECT 1;
-        </sql>
+    <changeSet id="08082026212600" author="lopreti">
+        <createTable tableName="accounts">
+            <column
+                    name="id"
+                    type="UUID">
+                <constraints
+                        primaryKey="true"
+                        nullable="false"
+                        primaryKeyName="pk_accounts"/>
+            </column>
+            <column
+                    name="customer_id"
+                    type="UUID">
+                <constraints nullable="false"/>
+            </column>
+            <column
+                    name="currency"
+                    type="VARCHAR(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column
+                    name="status"
+                    type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column
+                    name="created_at"
+                    type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex
+                indexName="idx_accounts_customer_id"
+                tableName="accounts">
+            <column name="customer_id"/>
+        </createIndex>
     </changeSet>
 
 </databaseChangeLog>

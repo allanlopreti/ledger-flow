@@ -9,9 +9,6 @@ public record Money(BigDecimal amount, Currency currency) {
     public Money {
         Objects.requireNonNull(amount, "Amount cannot be null");
         Objects.requireNonNull(currency, "Currency cannot be null");
-        if (amount.scale() < 0) {
-            throw new IllegalArgumentException("Invalid amount scale");
-        }
     }
 
     public static Money of(BigDecimal amount, Currency currency) {
@@ -72,9 +69,9 @@ public record Money(BigDecimal amount, Currency currency) {
         );
     }
 
-    private void ensureSameCurrency(Money other) {
-        Objects.requireNonNull(other, "Money cannot be null");
-        if (!currency.equals(other.currency)) {
+    private void ensureSameCurrency(Money money) {
+        Objects.requireNonNull(money, "Money cannot be null");
+        if (!currency.equals(money.currency)) {
             throw new IllegalArgumentException(
                     "Cannot operate with different currencies"
             );

@@ -43,6 +43,22 @@ public final class Account {
         );
     }
 
+    public static Account reconstitute(
+            AccountId id,
+            CustomerId customerId,
+            Currency currency,
+            AccountStatus status,
+            Instant createdAt
+    ) {
+        return new Account(
+                id,
+                customerId,
+                currency,
+                status,
+                createdAt
+        );
+    }
+
     public void block() {
         if (status.equals(AccountStatus.CLOSED)) {
             throw new IllegalStateException("Closed account cannot be blocked");
