@@ -13,9 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class TransactionTest {
 
     @Test
-    void shouldPostBalancedMultiCurrencyTransaction() {
-
-        var usd = Currency.of("USD");
+    void shouldPostBalancedSameCurrencyTransaction() {
         var brl = Currency.of("BRL");
 
         var transaction = Transaction.create(
@@ -24,35 +22,17 @@ class TransactionTest {
                 Instant.now()
         );
 
-        var sourceAccount = AccountId.generate();
-        var targetAccount = AccountId.generate();
-
-        var sourceMoney = Money.of(
+        var money = Money.of(
                 new BigDecimal("100.00"),
-                usd
-        );
-
-        var targetMoney = Money.of(
-                new BigDecimal("520.00"),
-                brl
-        );
-
-        var sourceBaseMoney = Money.of(
-                new BigDecimal("520.00"),
-                brl
-        );
-
-        var targetBaseMoney = Money.of(
-                new BigDecimal("520.00"),
                 brl
         );
 
         transaction.addPosting(
                 Posting.debit(
                         PostingId.generate(),
-                        sourceAccount,
-                        sourceMoney,
-                        sourceBaseMoney,
+                        AccountId.generate(),
+                        money,
+                        money,
                         Instant.now()
                 )
         );
@@ -60,9 +40,9 @@ class TransactionTest {
         transaction.addPosting(
                 Posting.credit(
                         PostingId.generate(),
-                        targetAccount,
-                        targetMoney,
-                        targetBaseMoney,
+                        AccountId.generate(),
+                        money,
+                        money,
                         Instant.now()
                 )
         );
@@ -76,10 +56,137 @@ class TransactionTest {
     }
 
     @Test
-    void shouldRejectUnbalancedMultiCurrencyTransaction() {
-
-        var usd = Currency.of("USD");
+    void shouldRejectTransactionWithOnlyOnePosting() {
         var brl = Currency.of("BRL");
+
+        var transaction = Transaction.create(
+                TransactionId.generate(),
+                brl,
+                Instant.now()
+        );
+
+        var money = Money.of(
+                new BigDecimal("100.00"),
+                brl
+        );
+
+        transaction.addPosting(
+                Posting.debit(
+                        PostingId.generate(),
+                        AccountId.generate(),
+                        money,
+                        money,
+                        Instant.now()
+                )
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                transaction::post
+        );
+
+        assertEquals(
+                TransactionStatus.PENDING,
+                transaction.status()
+        );
+    }
+
+    @Test
+    void shouldRejectPostingWithDuplicateId() {
+        var brl = Currency.of("BRL");
+
+        var transaction = Transaction.create(
+                TransactionId.generate(),
+                brl,
+                Instant.now()
+        );
+
+        var postingId = PostingId.generate();
+
+        var money = Money.of(
+                new BigDecimal("100.00"),
+                brl
+        );
+
+        var firstPosting = Posting.debit(
+                postingId,
+                AccountId.generate(),
+                money,
+                money,
+                Instant.now()
+        );
+
+        var secondPosting = Posting.credit(
+                postingId,
+                AccountId.generate(),
+                money,
+                money,
+                Instant.now()
+        );
+
+        transaction.addPosting(firstPosting);
+
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> transaction.addPosting(secondPosting)
+        );
+    }
+
+    @Test
+    void shouldNotAllowAddingPostingAfterTransactionIsPosted() {
+        var brl = Currency.of("BRL");
+
+        var transaction = Transaction.create(
+                TransactionId.generate(),
+                brl,
+                Instant.now()
+        );
+
+        var money = Money.of(
+                new BigDecimal("100.00"),
+                brl
+        );
+
+        transaction.addPosting(
+                Posting.debit(
+                        PostingId.generate(),
+                        AccountId.generate(),
+                        money,
+                        money,
+                        Instant.now()
+                )
+        );
+
+        transaction.addPosting(
+                Posting.credit(
+                        PostingId.generate(),
+                        AccountId.generate(),
+                        money,
+                        money,
+                        Instant.now()
+                )
+        );
+
+        transaction.post();
+
+        assertThrows(
+                IllegalStateException.class,
+                () -> transaction.addPosting(
+                        Posting.debit(
+                                PostingId.generate(),
+                                AccountId.generate(),
+                                money,
+                                money,
+                                Instant.now()
+                        )
+                )
+        );
+    }
+
+    @Test
+    void shouldRejectUnbalancedBaseMoney() {
+        var brl = Currency.of("BRL");
+        var usd = Currency.of("USD");
 
         var transaction = Transaction.create(
                 TransactionId.generate(),
@@ -108,11 +215,11 @@ class TransactionTest {
                         PostingId.generate(),
                         AccountId.generate(),
                         Money.of(
-                                new BigDecimal("500.00"),
+                                new BigDecimal("520.00"),
                                 brl
                         ),
                         Money.of(
-                                new BigDecimal("500.00"),
+                                new BigDecimal("519.99"),
                                 brl
                         ),
                         Instant.now()
@@ -123,13 +230,32 @@ class TransactionTest {
                 IllegalStateException.class,
                 transaction::post
         );
+
+        assertEquals(
+                TransactionStatus.PENDING,
+                transaction.status()
+        );
     }
 
     @Test
-    void shouldRejectPostingWithWrongBaseCurrency() {
-
+    void shouldRejectReversingTransactionThatIsNotPosted() {
         var brl = Currency.of("BRL");
-        var usd = Currency.of("USD");
+
+        var transaction = Transaction.create(
+                TransactionId.generate(),
+                brl,
+                Instant.now()
+        );
+
+        assertThrows(
+                IllegalStateException.class,
+                transaction::reverse
+        );
+    }
+
+    @Test
+    void shouldReversePostedTransaction() {
+        var brl = Currency.of("BRL");
 
         var transaction = Transaction.create(
                 TransactionId.generate(),
@@ -139,25 +265,79 @@ class TransactionTest {
 
         var money = Money.of(
                 new BigDecimal("100.00"),
-                usd
+                brl
         );
 
-        var wrongBaseMoney = Money.of(
-                new BigDecimal("520.00"),
-                usd
+        transaction.addPosting(
+                Posting.debit(
+                        PostingId.generate(),
+                        AccountId.generate(),
+                        money,
+                        money,
+                        Instant.now()
+                )
         );
+
+        transaction.addPosting(
+                Posting.credit(
+                        PostingId.generate(),
+                        AccountId.generate(),
+                        money,
+                        money,
+                        Instant.now()
+                )
+        );
+
+        transaction.post();
+        transaction.reverse();
+
+        assertEquals(
+                TransactionStatus.REVERSED,
+                transaction.status()
+        );
+    }
+
+    @Test
+    void shouldRejectReversingAlreadyReversedTransaction() {
+        var brl = Currency.of("BRL");
+
+        var transaction = Transaction.create(
+                TransactionId.generate(),
+                brl,
+                Instant.now()
+        );
+
+        var money = Money.of(
+                new BigDecimal("100.00"),
+                brl
+        );
+
+        transaction.addPosting(
+                Posting.debit(
+                        PostingId.generate(),
+                        AccountId.generate(),
+                        money,
+                        money,
+                        Instant.now()
+                )
+        );
+
+        transaction.addPosting(
+                Posting.credit(
+                        PostingId.generate(),
+                        AccountId.generate(),
+                        money,
+                        money,
+                        Instant.now()
+                )
+        );
+
+        transaction.post();
+        transaction.reverse();
 
         assertThrows(
-                IllegalArgumentException.class,
-                () -> transaction.addPosting(
-                        Posting.debit(
-                                PostingId.generate(),
-                                AccountId.generate(),
-                                money,
-                                wrongBaseMoney,
-                                Instant.now()
-                        )
-                )
+                IllegalStateException.class,
+                transaction::reverse
         );
     }
 }

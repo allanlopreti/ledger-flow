@@ -56,6 +56,34 @@ public final class Transaction {
         );
     }
 
+    public static Transaction reconstitute(
+            TransactionId id,
+            Currency baseCurrency,
+            Instant createdAt,
+            TransactionStatus status,
+            List<Posting> postings
+    ) {
+        Transaction transaction = new Transaction(
+                id,
+                baseCurrency,
+                createdAt
+        );
+
+        transaction.status = Objects.requireNonNull(
+                status,
+                "Transaction status cannot be null"
+        );
+
+        transaction.postings.addAll(
+                Objects.requireNonNull(
+                        postings,
+                        "Postings cannot be null"
+                )
+        );
+
+        return transaction;
+    }
+
     public void addPosting(Posting posting) {
         ensurePending();
 

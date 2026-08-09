@@ -100,6 +100,24 @@ public final class Posting {
         );
     }
 
+    public static Posting reconstitute(
+            PostingId id,
+            AccountId accountId,
+            PostingType type,
+            Money money,
+            Money baseMoney,
+            Instant createdAt
+    ) {
+        return new Posting(
+                id,
+                accountId,
+                type,
+                money,
+                baseMoney,
+                createdAt
+        );
+    }
+
     public PostingId id() {
         return id;
     }

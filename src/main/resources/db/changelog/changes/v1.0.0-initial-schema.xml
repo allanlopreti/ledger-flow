@@ -44,4 +44,119 @@
         </createIndex>
     </changeSet>
 
+    <changeSet id="08082026234700" author="lopreti">
+        <createTable tableName="transactions">
+            <column
+                    name="id"
+                    type="UUID">
+                <constraints
+                        primaryKey="true"
+                        nullable="false"
+                        primaryKeyName="pk_transactions"/>
+            </column>
+            <column
+                    name="base_currency"
+                    type="VARCHAR(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column
+                    name="status"
+                    type="VARCHAR(20)">
+                <constraints nullable="false"/>
+            </column>
+            <column
+                    name="created_at"
+                    type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex
+                indexName="idx_transactions_status"
+                tableName="transactions">
+            <column name="status"/>
+        </createIndex>
+        <createIndex
+                indexName="idx_transactions_created_at"
+                tableName="transactions">
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
+
+    <changeSet id="08082026234800" author="lopreti">
+        <createTable tableName="postings">
+            <column
+                    name="id"
+                    type="UUID">
+                <constraints
+                        primaryKey="true"
+                        nullable="false"
+                        primaryKeyName="pk_postings"/>
+            </column>
+            <column
+                    name="transaction_id"
+                    type="UUID">
+                <constraints
+                        nullable="false"
+                        foreignKeyName="fk_postings_transaction"
+                        referencedTableName="transactions"
+                        referencedColumnNames="id"/>
+            </column>
+            <column
+                    name="account_id"
+                    type="UUID">
+                <constraints
+                        nullable="false"
+                        foreignKeyName="fk_postings_account"
+                        referencedTableName="accounts"
+                        referencedColumnNames="id"/>
+            </column>
+            <column
+                    name="type"
+                    type="VARCHAR(10)">
+                <constraints nullable="false"/>
+            </column>
+            <column
+                    name="amount"
+                    type="DECIMAL(19,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column
+                    name="currency"
+                    type="VARCHAR(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column
+                    name="base_amount"
+                    type="DECIMAL(19,4)">
+                <constraints nullable="false"/>
+            </column>
+            <column
+                    name="base_currency"
+                    type="VARCHAR(3)">
+                <constraints nullable="false"/>
+            </column>
+            <column
+                    name="created_at"
+                    type="TIMESTAMP WITH TIME ZONE">
+                <constraints nullable="false"/>
+            </column>
+        </createTable>
+        <createIndex
+                indexName="idx_postings_transaction_id"
+                tableName="postings">
+            <column name="transaction_id"/>
+        </createIndex>
+        <createIndex
+                indexName="idx_postings_account_id"
+                tableName="postings">
+            <column name="account_id"/>
+        </createIndex>
+        <createIndex
+                indexName="idx_postings_created_at"
+                tableName="postings">
+            <column name="created_at"/>
+        </createIndex>
+    </changeSet>
+
 </databaseChangeLog>
