@@ -2,6 +2,7 @@ package com.lopreti.ledger.flow.account.infrastructure.web;
 
 import com.lopreti.ledger.flow.account.application.port.in.CreateAccountUseCase;
 import com.lopreti.ledger.flow.account.application.port.in.GetAccountBalanceUseCase;
+import com.lopreti.ledger.flow.account.application.port.in.GetAccountsUseCase;
 import com.lopreti.ledger.flow.account.domain.CustomerId;
 import com.lopreti.ledger.flow.account.infrastructure.web.dto.AccountBalanceResponse;
 import com.lopreti.ledger.flow.account.infrastructure.web.dto.AccountResponse;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -25,16 +27,27 @@ public class AccountController {
 
     private final CreateAccountUseCase createAccountUseCase;
     private final GetAccountBalanceUseCase getAccountBalanceUseCase;
+    private final GetAccountsUseCase getAccountsUseCase;
 
     public AccountController(
             CreateAccountUseCase createAccountUseCase,
-            GetAccountBalanceUseCase getAccountBalanceUseCase
+            GetAccountBalanceUseCase getAccountBalanceUseCase, GetAccountsUseCase getAccountsUseCase
     ) {
-        this.createAccountUseCase =
-                createAccountUseCase;
+        this.createAccountUseCase = createAccountUseCase;
+        this.getAccountBalanceUseCase = getAccountBalanceUseCase;
+        this.getAccountsUseCase = getAccountsUseCase;
+    }
 
-        this.getAccountBalanceUseCase =
-                getAccountBalanceUseCase;
+    @GetMapping
+    public ResponseEntity<List<AccountResponse>> findAll() {
+
+        var accounts =
+                getAccountsUseCase.execute()
+                        .stream()
+                        .map(AccountResponse::from)
+                        .toList();
+
+        return ResponseEntity.ok(accounts);
     }
 
     @PostMapping

@@ -1,6 +1,7 @@
 package com.lopreti.ledger.flow.ledger.domain;
 
 import com.lopreti.ledger.flow.shared.domain.Currency;
+import com.lopreti.ledger.flow.shared.domain.ExchangeRate;
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -14,6 +15,7 @@ public final class Transaction {
     private final TransactionId id;
     private final Currency baseCurrency;
     private final Instant createdAt;
+    private final ExchangeRate exchangeRate;
 
     private final List<Posting> postings;
 
@@ -22,7 +24,8 @@ public final class Transaction {
     private Transaction(
             TransactionId id,
             Currency baseCurrency,
-            Instant createdAt
+            Instant createdAt,
+            ExchangeRate exchangeRate
     ) {
         this.id = Objects.requireNonNull(
                 id,
@@ -39,6 +42,8 @@ public final class Transaction {
                 "Created at cannot be null"
         );
 
+        this.exchangeRate = exchangeRate;
+
         this.postings = new ArrayList<>();
 
         this.status = TransactionStatus.PENDING;
@@ -52,7 +57,27 @@ public final class Transaction {
         return new Transaction(
                 id,
                 baseCurrency,
-                createdAt
+                createdAt,
+                null
+        );
+    }
+
+    public static Transaction createFx(
+            TransactionId id,
+            Currency baseCurrency,
+            Instant createdAt,
+            ExchangeRate exchangeRate
+    ) {
+        Objects.requireNonNull(
+                exchangeRate,
+                "Exchange rate cannot be null"
+        );
+
+        return new Transaction(
+                id,
+                baseCurrency,
+                createdAt,
+                exchangeRate
         );
     }
 
@@ -63,10 +88,29 @@ public final class Transaction {
             TransactionStatus status,
             List<Posting> postings
     ) {
+        return reconstitute(
+                id,
+                baseCurrency,
+                createdAt,
+                status,
+                postings,
+                null
+        );
+    }
+
+    public static Transaction reconstitute(
+            TransactionId id,
+            Currency baseCurrency,
+            Instant createdAt,
+            TransactionStatus status,
+            List<Posting> postings,
+            ExchangeRate exchangeRate
+    ) {
         Transaction transaction = new Transaction(
                 id,
                 baseCurrency,
-                createdAt
+                createdAt,
+                exchangeRate
         );
 
         transaction.status = Objects.requireNonNull(
@@ -85,6 +129,7 @@ public final class Transaction {
     }
 
     public void addPosting(Posting posting) {
+
         ensurePending();
 
         Objects.requireNonNull(
@@ -114,6 +159,7 @@ public final class Transaction {
     }
 
     public void post() {
+
         ensurePending();
 
         if (postings.size() < 2) {
@@ -128,6 +174,7 @@ public final class Transaction {
     }
 
     public void reverse() {
+
         if (status != TransactionStatus.POSTED) {
             throw new IllegalStateException(
                     "Only posted transactions can be reversed"
@@ -168,6 +215,7 @@ public final class Transaction {
     }
 
     private void ensurePending() {
+
         if (status != TransactionStatus.PENDING) {
             throw new IllegalStateException(
                     "Transaction cannot be modified after posting"
@@ -189,6 +237,10 @@ public final class Transaction {
 
     public TransactionStatus status() {
         return status;
+    }
+
+    public ExchangeRate exchangeRate() {
+        return exchangeRate;
     }
 
     public List<Posting> postings() {

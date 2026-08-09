@@ -8,6 +8,7 @@ import com.lopreti.ledger.flow.account.domain.CustomerId;
 import com.lopreti.ledger.flow.shared.domain.Currency;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -51,6 +52,14 @@ public class AccountRepositoryAdapter
     public boolean existsById(AccountId id) {
 
         return repository.existsById(id.value());
+    }
+
+    @Override
+    public List<Account> findAll() {
+        return repository.findAll()
+                .stream()
+                .map(this::toDomain)
+                .toList();
     }
 
     private Account toDomain(
