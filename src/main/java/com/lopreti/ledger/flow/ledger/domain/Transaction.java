@@ -2,6 +2,7 @@ package com.lopreti.ledger.flow.ledger.domain;
 
 import com.lopreti.ledger.flow.shared.domain.Currency;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,6 +12,7 @@ import java.util.Objects;
 public final class Transaction {
 
     private final TransactionId id;
+    private final Currency baseCurrency;
     private final Instant createdAt;
 
     private final List<Posting> postings;
@@ -19,31 +21,64 @@ public final class Transaction {
 
     private Transaction(
             TransactionId id,
+            Currency baseCurrency,
             Instant createdAt
     ) {
-        this.id = Objects.requireNonNull(id);
-        this.createdAt = Objects.requireNonNull(createdAt);
+        this.id = Objects.requireNonNull(
+                id,
+                "Transaction ID cannot be null"
+        );
+
+        this.baseCurrency = Objects.requireNonNull(
+                baseCurrency,
+                "Base currency cannot be null"
+        );
+
+        this.createdAt = Objects.requireNonNull(
+                createdAt,
+                "Created at cannot be null"
+        );
+
         this.postings = new ArrayList<>();
+
         this.status = TransactionStatus.PENDING;
     }
 
     public static Transaction create(
             TransactionId id,
+            Currency baseCurrency,
             Instant createdAt
     ) {
-        return new Transaction(id, createdAt);
+        return new Transaction(
+                id,
+                baseCurrency,
+                createdAt
+        );
     }
 
     public void addPosting(Posting posting) {
         ensurePending();
 
-        Objects.requireNonNull(posting);
+        Objects.requireNonNull(
+                posting,
+                "Posting cannot be null"
+        );
 
         if (postings.stream()
-                .anyMatch(existing -> existing.id().equals(posting.id()))) {
+                .anyMatch(existing ->
+                        existing.id().equals(posting.id()))) {
 
             throw new IllegalArgumentException(
                     "Posting already belongs to this transaction"
+            );
+        }
+
+        if (!posting.baseMoney()
+                .currency()
+                .equals(baseCurrency)) {
+
+            throw new IllegalArgumentException(
+                    "Posting base currency must match transaction base currency"
             );
         }
 
@@ -76,47 +111,31 @@ public final class Transaction {
 
     private void validateBalance() {
 
-        var currencies = postings.stream()
-                .map(posting -> posting.money().currency())
-                .distinct()
-                .toList();
-
-        for (Currency currency : currencies) {
-
-            var debits = postings.stream()
-                    .filter(posting ->
-                            posting.type() == PostingType.DEBIT)
-                    .filter(posting ->
-                            posting.money()
-                                    .currency()
-                                    .equals(currency))
-                    .map(posting ->
-                            posting.money().amount())
-                    .reduce(
-                            java.math.BigDecimal.ZERO,
-                            java.math.BigDecimal::add
-                    );
-
-            var credits = postings.stream()
-                    .filter(posting ->
-                            posting.type() == PostingType.CREDIT)
-                    .filter(posting ->
-                            posting.money()
-                                    .currency()
-                                    .equals(currency))
-                    .map(posting ->
-                            posting.money().amount())
-                    .reduce(
-                            java.math.BigDecimal.ZERO,
-                            java.math.BigDecimal::add
-                    );
-
-            if (debits.compareTo(credits) != 0) {
-                throw new IllegalStateException(
-                        "Transaction is not balanced for currency "
-                                + currency.code()
+        BigDecimal debits = postings.stream()
+                .filter(posting ->
+                        posting.type() == PostingType.DEBIT)
+                .map(posting ->
+                        posting.baseMoney().amount())
+                .reduce(
+                        BigDecimal.ZERO,
+                        BigDecimal::add
                 );
-            }
+
+        BigDecimal credits = postings.stream()
+                .filter(posting ->
+                        posting.type() == PostingType.CREDIT)
+                .map(posting ->
+                        posting.baseMoney().amount())
+                .reduce(
+                        BigDecimal.ZERO,
+                        BigDecimal::add
+                );
+
+        if (debits.compareTo(credits) != 0) {
+            throw new IllegalStateException(
+                    "Transaction is not balanced for base currency "
+                            + baseCurrency.code()
+            );
         }
     }
 
@@ -130,6 +149,10 @@ public final class Transaction {
 
     public TransactionId id() {
         return id;
+    }
+
+    public Currency baseCurrency() {
+        return baseCurrency;
     }
 
     public Instant createdAt() {

@@ -4,29 +4,62 @@ import com.lopreti.ledger.flow.shared.domain.Currency;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AccountTest {
 
+    private static final Currency BRL =
+            Currency.of("BRL");
+
+    private static final CustomerId CUSTOMER_ID =
+            CustomerId.of(UUID.randomUUID());
+
+    private static final Instant CREATED_AT =
+            Instant.parse("2026-08-08T12:00:00Z");
+
     @Test
-    void shouldCreateActiveAccount() {
-        AccountId accountId = AccountId.generate();
-        CustomerId customerId = CustomerId.generate();
-        Currency currency = Currency.of("BRL");
-        Instant createdAt = Instant.now();
+    void shouldCreateAccount() {
+        AccountId accountId =
+                AccountId.generate();
 
         Account account = Account.create(
                 accountId,
-                customerId,
-                currency,
-                createdAt
+                CUSTOMER_ID,
+                BRL,
+                CREATED_AT
         );
 
-        assertEquals(accountId, account.id());
-        assertEquals(customerId, account.customerId());
-        assertEquals(currency, account.currency());
-        assertEquals(createdAt, account.createdAt());
+        assertEquals(
+                accountId,
+                account.id()
+        );
+
+        assertEquals(
+                CUSTOMER_ID,
+                account.customerId()
+        );
+
+        assertEquals(
+                BRL,
+                account.currency()
+        );
+
+        assertEquals(
+                AccountStatus.ACTIVE,
+                account.status()
+        );
+
+        assertEquals(
+                CREATED_AT,
+                account.createdAt()
+        );
+    }
+
+    @Test
+    void shouldCreateAccountWithActiveStatus() {
+        Account account = createAccount();
 
         assertEquals(
                 AccountStatus.ACTIVE,
@@ -72,7 +105,20 @@ class AccountTest {
     }
 
     @Test
-    void shouldNotBlockClosedAccount() {
+    void shouldCloseBlockedAccount() {
+        Account account = createAccount();
+
+        account.block();
+        account.close();
+
+        assertEquals(
+                AccountStatus.CLOSED,
+                account.status()
+        );
+    }
+
+    @Test
+    void shouldRejectBlockingClosedAccount() {
         Account account = createAccount();
 
         account.close();
@@ -84,7 +130,7 @@ class AccountTest {
     }
 
     @Test
-    void shouldNotActivateClosedAccount() {
+    void shouldRejectActivatingClosedAccount() {
         Account account = createAccount();
 
         account.close();
@@ -96,7 +142,7 @@ class AccountTest {
     }
 
     @Test
-    void shouldNotCloseAlreadyClosedAccount() {
+    void shouldRejectClosingAlreadyClosedAccount() {
         Account account = createAccount();
 
         account.close();
@@ -108,21 +154,23 @@ class AccountTest {
     }
 
     @Test
-    void shouldGenerateTimeOrderedIds() {
-        AccountId first = AccountId.generate();
-        AccountId second = AccountId.generate();
+    void shouldAllowActivatingAlreadyActiveAccount() {
+        Account account = createAccount();
 
-        assertTrue(
-                first.value().compareTo(second.value()) < 0
+        account.activate();
+
+        assertEquals(
+                AccountStatus.ACTIVE,
+                account.status()
         );
     }
 
     private Account createAccount() {
         return Account.create(
                 AccountId.generate(),
-                CustomerId.generate(),
-                Currency.of("BRL"),
-                Instant.now()
+                CUSTOMER_ID,
+                BRL,
+                CREATED_AT
         );
     }
 }

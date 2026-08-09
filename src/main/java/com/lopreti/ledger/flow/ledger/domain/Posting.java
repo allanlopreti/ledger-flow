@@ -12,6 +12,7 @@ public final class Posting {
     private final AccountId accountId;
     private final PostingType type;
     private final Money money;
+    private final Money baseMoney;
     private final Instant createdAt;
 
     private Posting(
@@ -19,17 +20,48 @@ public final class Posting {
             AccountId accountId,
             PostingType type,
             Money money,
+            Money baseMoney,
             Instant createdAt
     ) {
-        this.id = Objects.requireNonNull(id);
-        this.accountId = Objects.requireNonNull(accountId);
-        this.type = Objects.requireNonNull(type);
-        this.money = Objects.requireNonNull(money);
-        this.createdAt = Objects.requireNonNull(createdAt);
+        this.id = Objects.requireNonNull(
+                id,
+                "Posting ID cannot be null"
+        );
+
+        this.accountId = Objects.requireNonNull(
+                accountId,
+                "Account ID cannot be null"
+        );
+
+        this.type = Objects.requireNonNull(
+                type,
+                "Posting type cannot be null"
+        );
+
+        this.money = Objects.requireNonNull(
+                money,
+                "Money cannot be null"
+        );
+
+        this.baseMoney = Objects.requireNonNull(
+                baseMoney,
+                "Base money cannot be null"
+        );
+
+        this.createdAt = Objects.requireNonNull(
+                createdAt,
+                "Created at cannot be null"
+        );
 
         if (!money.isPositive()) {
             throw new IllegalArgumentException(
                     "Posting amount must be positive"
+            );
+        }
+
+        if (!baseMoney.isPositive()) {
+            throw new IllegalArgumentException(
+                    "Base money amount must be positive"
             );
         }
     }
@@ -38,6 +70,7 @@ public final class Posting {
             PostingId id,
             AccountId accountId,
             Money money,
+            Money baseMoney,
             Instant createdAt
     ) {
         return new Posting(
@@ -45,6 +78,7 @@ public final class Posting {
                 accountId,
                 PostingType.DEBIT,
                 money,
+                baseMoney,
                 createdAt
         );
     }
@@ -53,6 +87,7 @@ public final class Posting {
             PostingId id,
             AccountId accountId,
             Money money,
+            Money baseMoney,
             Instant createdAt
     ) {
         return new Posting(
@@ -60,6 +95,7 @@ public final class Posting {
                 accountId,
                 PostingType.CREDIT,
                 money,
+                baseMoney,
                 createdAt
         );
     }
@@ -80,8 +116,11 @@ public final class Posting {
         return money;
     }
 
+    public Money baseMoney() {
+        return baseMoney;
+    }
+
     public Instant createdAt() {
         return createdAt;
     }
-
 }

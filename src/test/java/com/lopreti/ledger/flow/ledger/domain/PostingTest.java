@@ -12,14 +12,21 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class PostingTest {
 
-    private static final Currency BRL = Currency.of("BRL");
+    private static final Currency BRL =
+            Currency.of("BRL");
 
     private static final AccountId ACCOUNT_ID =
             AccountId.generate();
 
     @Test
     void shouldCreateDebitPosting() {
+
         Money money = Money.of(
+                new BigDecimal("100.00"),
+                BRL
+        );
+
+        Money baseMoney = Money.of(
                 new BigDecimal("100.00"),
                 BRL
         );
@@ -28,6 +35,7 @@ class PostingTest {
                 PostingId.generate(),
                 ACCOUNT_ID,
                 money,
+                baseMoney,
                 Instant.now()
         );
 
@@ -42,6 +50,11 @@ class PostingTest {
         );
 
         assertEquals(
+                baseMoney,
+                posting.baseMoney()
+        );
+
+        assertEquals(
                 ACCOUNT_ID,
                 posting.accountId()
         );
@@ -49,7 +62,13 @@ class PostingTest {
 
     @Test
     void shouldCreateCreditPosting() {
+
         Money money = Money.of(
+                new BigDecimal("100.00"),
+                BRL
+        );
+
+        Money baseMoney = Money.of(
                 new BigDecimal("100.00"),
                 BRL
         );
@@ -58,6 +77,7 @@ class PostingTest {
                 PostingId.generate(),
                 ACCOUNT_ID,
                 money,
+                baseMoney,
                 Instant.now()
         );
 
@@ -65,11 +85,24 @@ class PostingTest {
                 PostingType.CREDIT,
                 posting.type()
         );
+
+        assertEquals(
+                money,
+                posting.money()
+        );
+
+        assertEquals(
+                baseMoney,
+                posting.baseMoney()
+        );
     }
 
     @Test
     void shouldRejectZeroAmount() {
+
         Money money = Money.zero(BRL);
+
+        Money baseMoney = Money.zero(BRL);
 
         assertThrows(
                 IllegalArgumentException.class,
@@ -77,6 +110,7 @@ class PostingTest {
                         PostingId.generate(),
                         ACCOUNT_ID,
                         money,
+                        baseMoney,
                         Instant.now()
                 )
         );
@@ -84,7 +118,13 @@ class PostingTest {
 
     @Test
     void shouldRejectNegativeAmount() {
+
         Money money = Money.of(
+                new BigDecimal("-100.00"),
+                BRL
+        );
+
+        Money baseMoney = Money.of(
                 new BigDecimal("-100.00"),
                 BRL
         );
@@ -95,6 +135,7 @@ class PostingTest {
                         PostingId.generate(),
                         ACCOUNT_ID,
                         money,
+                        baseMoney,
                         Instant.now()
                 )
         );

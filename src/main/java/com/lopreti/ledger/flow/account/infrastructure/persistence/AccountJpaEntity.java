@@ -1,65 +1,29 @@
 package com.lopreti.ledger.flow.account.infrastructure.persistence;
 
 import com.lopreti.ledger.flow.account.domain.AccountStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.Id;
-import jakarta.persistence.Index;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(
-        name = "accounts",
-        indexes = {
-                @Index(
-                        name = "idx_accounts_customer_id",
-                        columnList = "customer_id"
-                )
-        }
-)
+@Table(name = "accounts")
 public class AccountJpaEntity {
 
     @Id
-    @Column(
-            name = "id",
-            nullable = false,
-            updatable = false
-    )
     private UUID id;
 
-    @Column(
-            name = "customer_id",
-            nullable = false,
-            updatable = false
-    )
+    @Column(name = "customer_id", nullable = false)
     private UUID customerId;
 
-    @Column(
-            name = "currency",
-            nullable = false,
-            length = 3,
-            updatable = false
-    )
+    @Column(name = "currency", nullable = false, length = 3)
     private String currency;
 
     @Enumerated(EnumType.STRING)
-    @Column(
-            name = "status",
-            nullable = false,
-            length = 20
-    )
+    @Column(name = "status", nullable = false)
     private AccountStatus status;
 
-    @Column(
-            name = "created_at",
-            nullable = false,
-            updatable = false
-    )
+    @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
     protected AccountJpaEntity() {
@@ -98,5 +62,4 @@ public class AccountJpaEntity {
     public Instant getCreatedAt() {
         return createdAt;
     }
-
 }

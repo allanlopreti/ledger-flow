@@ -12,51 +12,47 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TransactionTest {
 
-    private static final Currency BRL =
-            Currency.of("BRL");
-
-    private static final AccountId SOURCE_ACCOUNT =
-            AccountId.generate();
-
-    private static final AccountId TARGET_ACCOUNT =
-            AccountId.generate();
-
     @Test
-    void shouldCreatePendingTransaction() {
-        Transaction transaction =
-                Transaction.create(
-                        TransactionId.generate(),
-                        Instant.now()
-                );
+    void shouldPostBalancedMultiCurrencyTransaction() {
 
-        assertEquals(
-                TransactionStatus.PENDING,
-                transaction.status()
+        var usd = Currency.of("USD");
+        var brl = Currency.of("BRL");
+
+        var transaction = Transaction.create(
+                TransactionId.generate(),
+                brl,
+                Instant.now()
         );
 
-        assertTrue(
-                transaction.postings().isEmpty()
-        );
-    }
+        var sourceAccount = AccountId.generate();
+        var targetAccount = AccountId.generate();
 
-    @Test
-    void shouldPostBalancedTransaction() {
-        Transaction transaction =
-                Transaction.create(
-                        TransactionId.generate(),
-                        Instant.now()
-                );
-
-        Money amount = Money.of(
+        var sourceMoney = Money.of(
                 new BigDecimal("100.00"),
-                BRL
+                usd
+        );
+
+        var targetMoney = Money.of(
+                new BigDecimal("520.00"),
+                brl
+        );
+
+        var sourceBaseMoney = Money.of(
+                new BigDecimal("520.00"),
+                brl
+        );
+
+        var targetBaseMoney = Money.of(
+                new BigDecimal("520.00"),
+                brl
         );
 
         transaction.addPosting(
                 Posting.debit(
                         PostingId.generate(),
-                        SOURCE_ACCOUNT,
-                        amount,
+                        sourceAccount,
+                        sourceMoney,
+                        sourceBaseMoney,
                         Instant.now()
                 )
         );
@@ -64,8 +60,9 @@ class TransactionTest {
         transaction.addPosting(
                 Posting.credit(
                         PostingId.generate(),
-                        TARGET_ACCOUNT,
-                        amount,
+                        targetAccount,
+                        targetMoney,
+                        targetBaseMoney,
                         Instant.now()
                 )
         );
@@ -79,20 +76,28 @@ class TransactionTest {
     }
 
     @Test
-    void shouldRejectUnbalancedTransaction() {
-        Transaction transaction =
-                Transaction.create(
-                        TransactionId.generate(),
-                        Instant.now()
-                );
+    void shouldRejectUnbalancedMultiCurrencyTransaction() {
+
+        var usd = Currency.of("USD");
+        var brl = Currency.of("BRL");
+
+        var transaction = Transaction.create(
+                TransactionId.generate(),
+                brl,
+                Instant.now()
+        );
 
         transaction.addPosting(
                 Posting.debit(
                         PostingId.generate(),
-                        SOURCE_ACCOUNT,
+                        AccountId.generate(),
                         Money.of(
                                 new BigDecimal("100.00"),
-                                BRL
+                                usd
+                        ),
+                        Money.of(
+                                new BigDecimal("520.00"),
+                                brl
                         ),
                         Instant.now()
                 )
@@ -101,41 +106,14 @@ class TransactionTest {
         transaction.addPosting(
                 Posting.credit(
                         PostingId.generate(),
-                        TARGET_ACCOUNT,
+                        AccountId.generate(),
                         Money.of(
-                                new BigDecimal("90.00"),
-                                BRL
+                                new BigDecimal("500.00"),
+                                brl
                         ),
-                        Instant.now()
-                )
-        );
-
-        assertThrows(
-                IllegalStateException.class,
-                transaction::post
-        );
-
-        assertEquals(
-                TransactionStatus.PENDING,
-                transaction.status()
-        );
-    }
-
-    @Test
-    void shouldNotAllowPostingWithLessThanTwoPostings() {
-        Transaction transaction =
-                Transaction.create(
-                        TransactionId.generate(),
-                        Instant.now()
-                );
-
-        transaction.addPosting(
-                Posting.debit(
-                        PostingId.generate(),
-                        SOURCE_ACCOUNT,
                         Money.of(
-                                new BigDecimal("100.00"),
-                                BRL
+                                new BigDecimal("500.00"),
+                                brl
                         ),
                         Instant.now()
                 )
@@ -148,88 +126,38 @@ class TransactionTest {
     }
 
     @Test
-    void shouldNotAllowModificationAfterPosting() {
-        Transaction transaction =
-                Transaction.create(
-                        TransactionId.generate(),
-                        Instant.now()
-                );
+    void shouldRejectPostingWithWrongBaseCurrency() {
 
-        Money amount = Money.of(
+        var brl = Currency.of("BRL");
+        var usd = Currency.of("USD");
+
+        var transaction = Transaction.create(
+                TransactionId.generate(),
+                brl,
+                Instant.now()
+        );
+
+        var money = Money.of(
                 new BigDecimal("100.00"),
-                BRL
+                usd
         );
 
-        transaction.addPosting(
-                Posting.debit(
-                        PostingId.generate(),
-                        SOURCE_ACCOUNT,
-                        amount,
-                        Instant.now()
-                )
+        var wrongBaseMoney = Money.of(
+                new BigDecimal("520.00"),
+                usd
         );
-
-        transaction.addPosting(
-                Posting.credit(
-                        PostingId.generate(),
-                        TARGET_ACCOUNT,
-                        amount,
-                        Instant.now()
-                )
-        );
-
-        transaction.post();
 
         assertThrows(
-                IllegalStateException.class,
+                IllegalArgumentException.class,
                 () -> transaction.addPosting(
-                        Posting.credit(
+                        Posting.debit(
                                 PostingId.generate(),
-                                TARGET_ACCOUNT,
-                                amount,
+                                AccountId.generate(),
+                                money,
+                                wrongBaseMoney,
                                 Instant.now()
                         )
                 )
-        );
-    }
-
-    @Test
-    void shouldReversePostedTransaction() {
-        Transaction transaction =
-                Transaction.create(
-                        TransactionId.generate(),
-                        Instant.now()
-                );
-
-        Money amount = Money.of(
-                new BigDecimal("100.00"),
-                BRL
-        );
-
-        transaction.addPosting(
-                Posting.debit(
-                        PostingId.generate(),
-                        SOURCE_ACCOUNT,
-                        amount,
-                        Instant.now()
-                )
-        );
-
-        transaction.addPosting(
-                Posting.credit(
-                        PostingId.generate(),
-                        TARGET_ACCOUNT,
-                        amount,
-                        Instant.now()
-                )
-        );
-
-        transaction.post();
-        transaction.reverse();
-
-        assertEquals(
-                TransactionStatus.REVERSED,
-                transaction.status()
         );
     }
 }

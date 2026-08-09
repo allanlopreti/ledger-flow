@@ -10,8 +10,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 @Repository
-public class AccountRepositoryAdapter
-        implements AccountRepository {
+public class AccountRepositoryAdapter implements AccountRepository {
 
     private final SpringDataAccountRepository repository;
 
@@ -23,6 +22,7 @@ public class AccountRepositoryAdapter
 
     @Override
     public Account save(Account account) {
+
         AccountJpaEntity entity = new AccountJpaEntity(
                 account.id().value(),
                 account.customerId().value(),
@@ -48,6 +48,7 @@ public class AccountRepositoryAdapter
     }
 
     private Account toDomain(AccountJpaEntity entity) {
+
         return Account.reconstitute(
                 AccountId.of(entity.getId()),
                 CustomerId.of(entity.getCustomerId()),

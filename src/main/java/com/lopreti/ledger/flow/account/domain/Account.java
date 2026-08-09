@@ -21,11 +21,23 @@ public final class Account {
             AccountStatus status,
             Instant createdAt
     ) {
-        this.id = Objects.requireNonNull(id);
-        this.customerId = Objects.requireNonNull(customerId);
-        this.currency = Objects.requireNonNull(currency);
-        this.status = Objects.requireNonNull(status);
-        this.createdAt = Objects.requireNonNull(createdAt);
+        this.id = Objects.requireNonNull(id, "Account ID cannot be null");
+        this.customerId = Objects.requireNonNull(
+                customerId,
+                "Customer ID cannot be null"
+        );
+        this.currency = Objects.requireNonNull(
+                currency,
+                "Currency cannot be null"
+        );
+        this.status = Objects.requireNonNull(
+                status,
+                "Account status cannot be null"
+        );
+        this.createdAt = Objects.requireNonNull(
+                createdAt,
+                "Created at cannot be null"
+        );
     }
 
     public static Account create(
@@ -60,23 +72,32 @@ public final class Account {
     }
 
     public void block() {
-        if (status.equals(AccountStatus.CLOSED)) {
-            throw new IllegalStateException("Closed account cannot be blocked");
+        if (status == AccountStatus.CLOSED) {
+            throw new IllegalStateException(
+                    "Closed account cannot be blocked"
+            );
         }
+
         status = AccountStatus.BLOCKED;
     }
 
     public void close() {
-        if (status.equals(AccountStatus.CLOSED)) {
-            throw new IllegalStateException("Account is already closed");
+        if (status == AccountStatus.CLOSED) {
+            throw new IllegalStateException(
+                    "Account is already closed"
+            );
         }
+
         status = AccountStatus.CLOSED;
     }
 
     public void activate() {
-        if (status.equals(AccountStatus.CLOSED)) {
-            throw new IllegalStateException("Closed account cannot be activated");
+        if (status == AccountStatus.CLOSED) {
+            throw new IllegalStateException(
+                    "Closed account cannot be activated"
+            );
         }
+
         status = AccountStatus.ACTIVE;
     }
 
@@ -99,5 +120,4 @@ public final class Account {
     public Instant createdAt() {
         return createdAt;
     }
-
 }
